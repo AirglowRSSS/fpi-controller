@@ -14,6 +14,8 @@ import numpy as np
 from math import pi
 import datetime
 from configScripts import configWriter
+import re
+import time
 
 class SkyScanner():
     ser = None
@@ -311,22 +313,46 @@ class SkyScanner():
     def go_home(self):
         logging.info('Homing Skyscanner')
         self.ser.write('GOSUB5 '.encode())
-        sleep(20)
+        sleep(45)
         print("Finished Moving")
         logging.info('Homed Skyscanner')
         print("Finished Moving SkyScanner to Home Position")
-
+'''
     def get_curr_coords(self):
-        '''Gets target position of SmartMotor'''
-        self.ser.write('RPA '.encode())
+        #Gets target position of SmartMotor
+        self.ser.write('RPA'.encode())
         process_az = self.ser.readline().decode()
-        #print('\nget_curr_coords process_az ', process_az)
+        #print('\nget_curr_coords process_az ', repr(process_az))    
         split_by_command_numbers = process_az.split(' ')
         split_by_hash = split_by_command_numbers[1].split('\r')
-        #print('get_curr_coords split_by_hash (az, az) ', split_by_hash)
+        print('get_curr_coords split_by_hash (az, az) ', split_by_hash)
         ze = int(split_by_hash[0])
         az = int(split_by_hash[1])
         return az, ze
+'''	
+    def get_curr_coords(self):
+    	self.ser.reset_input_buffer()
+    	self.ser.write(b'RP\r\n')
+    	_ = self.ser.readline()
+    	
+    	start = time.time()
+    	raw = b''
+    	while time.time() - start < 2.0:
+    	    raw = self.ser.readline()
+    	    if raw:
+    	        break
+    	if not raw:
+    	    raise TimeoutError("No response from motor")
+
+	decoded = raw.decode(errors='ignore').strip()
+	print("[Debug] Motor replied:", repr(decoded))
+	
+	nums = re.findall(r'-?\d+', decoded)
+	if len(nums) < 2:
+	    raise ValueError(f"Expected two integers but got: {decoded!r}")
+		
+	az, ze = map(int, nums[:2])
+	return az, ze
 
     def _openSerial(self):
         '''opens serial port and sets handle'''
