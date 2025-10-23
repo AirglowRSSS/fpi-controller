@@ -15,6 +15,7 @@ Also set Restore on AC/Power Loss to Power On in the BIOS
 ## Setup RDP
 
 `sudo apt update`
+
 `sudo apt install xrdp`
 
 check status:
@@ -49,7 +50,7 @@ Then reboot
 `ls -l /dev/` to verify the permission for hidraw0, it should be `crw-rw-rw-`
 
 
-# Setup for Raspberry Pi
+# Setup for Raspberry Pi (for systems with filterwheel)
 Install Raspberry Pi OS 32-bit
 
 Switch from DHCPCD to NetworkManager
