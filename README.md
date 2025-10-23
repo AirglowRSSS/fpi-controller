@@ -14,6 +14,7 @@ Also set Restore on AC/Power Loss to Power On in the BIOS
 
 ## Setup RDP
 
+`sudo apt update`
 `sudo apt install xrdp`
 
 check status:
