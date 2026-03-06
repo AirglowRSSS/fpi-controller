@@ -57,7 +57,7 @@ except ImportError:
 # ── FPI pipeline imports ───────────────────────────────────────────────────────
 try:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from FPI import ReadIMG, FindCenter, FindEqualAreas, AnnularSum
+    from airglow.FPI import ReadIMG, FindCenter, FindEqualAreas, AnnularSum
 except ImportError as exc:
     print(f"ERROR: Could not import FPI functions: {exc}", file=sys.stderr)
     sys.exit(1)
