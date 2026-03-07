@@ -8,7 +8,7 @@ import pickle
 from time import sleep
 from datetime import datetime, timedelta
 import smtplib, ssl
-from config import config, skyscan_config, filterwheel_config
+from config import config, skyscan_config, clemson5_config, filterwheel_config
 from schedule import observations
 
 import utilities.time_helper
@@ -19,10 +19,15 @@ from utilities.get_IP import get_IP_from_MAC
 from components.camera import getCamera
 from components.shutterhid import HIDLaserShutter
 
+skyscanner = True
+
 if skyscan_config['type'] == 'KEO':
     from components.sky_scanner_keo import SkyScanner
-else:
+elif skyscan_config['type'] == 'Clemson':
     from components.sky_scanner import SkyScanner
+else:
+    skyscanner = False
+    from components.clemson5 import Clemson5
 
 from components.skyalert import SkyAlert
 from components.powercontrol import PowerControl
@@ -122,7 +127,10 @@ try:
 
     # Housekeeping
     lasershutter = HIDLaserShutter(config['vendorId'], config['productId'])
-    skyscanner = SkyScanner(skyscan_config['max_steps'], skyscan_config['azi_offset'], skyscan_config['zeni_offset'], skyscan_config['azi_world'], skyscan_config['zeni_world'], skyscan_config['number_of_steps'], skyscan_config['port_location'])
+    if skyscanner:
+        skyscanner = SkyScanner(skyscan_config['max_steps'], skyscan_config['azi_offset'], skyscan_config['zeni_offset'], skyscan_config['azi_world'], skyscan_config['zeni_world'], skyscan_config['number_of_steps'], skyscan_config['port_location'])
+    else:
+        skyscanner = Clemson5(clemson5_config['max_steps'], clemson5_config['azi_offset'], clemson5_config['zeni_offset'], clemson5_config['azi_world'], clemson5_config['zeni_world'], clemson5_config['number_of_steps'], clemson5_config['port_location'])
     camera = getCamera("Andor")
     if (filterwheel_serial) & (filterwheel_config['port_location'] != None):
         # Use the serial port
