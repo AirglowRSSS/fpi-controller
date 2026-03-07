@@ -62,7 +62,7 @@ class SkyScanner():
         logging.info("Moving Skyscanner to Azi Machine Step: ", azi, " Zeni Machine Step: ", zeni)
         count = 0
         while (azi != azi1 or zeni != zeni1):
-            # print(azi, azi1, zeni, zeni1)
+            print(azi, azi1, zeni, zeni1)
             logging.debug("Current Azi Pos:", azi1, " ||||  Target Azi Pos:", azi)
             logging.debug("Current Zeni Pos:", zeni1, " ||||  Target Zeni Pos", zeni)
 
@@ -84,12 +84,14 @@ class SkyScanner():
 
     def set_pos_real(self, azi_world, zeni_world):
         azi, zeni = self.convert_to_machine_steps(azi_world, zeni_world)
-        #print("THIS is where I am moving", azi, zeni)
+        print("THIS is where I am moving", azi, zeni)
         logging.info("SkyScanner moving to azi: %.2f, and zeni: %.2f" %(azi_world, zeni_world))
         logging.info("SkyScanner moving to machine step azi: %.2f, and zeni: %.2f" %(azi, zeni))
         self.ser.write(('a=%d ' % azi).encode())
         self.ser.write(('z=%d ' % zeni).encode())
+        time.sleep(0.5)
         self.ser.write(('GOSUB4 ').encode())
+        time.sleep(0.5)
         process_az = self.ser.readline().decode()
         azi1, zeni1 = self.get_curr_coords()
         count = 0
@@ -97,7 +99,7 @@ class SkyScanner():
             logging.debug('set_pos_real while loop (goal, actual) az = (%.2f %.2f), ze = (%.2f %.2f)' % (azi, azi1, zeni, zeni1))
             azi1, zeni1 = self.get_curr_coords()
             sleep(2)
-            #print("Waiting ", count)
+            print("Waiting ", count)
             
             count = count+1
             if count > 10:
@@ -114,7 +116,7 @@ class SkyScanner():
         azi_curr, zeni_curr = self.get_world_coords()
         logging.info("SkyScanner current location azi: %.2f, and zeni: %.2f" %(azi_curr, zeni_curr))
         logging.info("SkyScanner current machine step azi: %.2f, and zeni: %.2f" %(azi1, zeni1))
-        #print("Finished Moving")
+        print("Finished Moving")
 
 
 
@@ -136,14 +138,53 @@ class SkyScanner():
 # written to config file -.45
 
     def convert_to_machine_steps(self, azi_world, zeni_world):
+        #Convert world to machine coordinates
         azi = -azi_world - self.azi_offset
         zeni = (-zeni_world) - self.zeni_offset + 180
         azi_machine_step = round((self.max_steps / 360) * azi)
         zeni_machine_step = round((self.max_steps / 360) * zeni)
         azi_machine_step = self.max_steps - (azi_machine_step % self.max_steps)
         zeni_machine_step = zeni_machine_step % self.max_steps
-        print(azi_machine_step, zeni_machine_step)
-        return azi_machine_step, zeni_machine_step
+        
+        #Define limits
+        azi_limits = (0, 12000)
+        zeni_limits = (0, 23999)
+        
+        #limit checking
+        if (azi_limits[0] <= azi_machine_step <= azi_limits[1]) and (zeni_limits[0] <= zeni_machine_step <= zeni_limits[1]):
+           
+           print(f"Within limits: {azi_machine_step}, {zeni_machine_step}")
+           return azi_machine_step, zeni_machine_step
+           
+        else:
+        
+        #Calculate complementary angles
+        #For azimuth: if outside 0-180 range, flip by 180
+        
+            if azi_machine_step > 12000:
+            
+                azi_complement = azi - 180
+                
+            else:
+            
+                azi_complement = azi + 180
+                
+        #Ensure azimuth complement is in valid range
+        
+            azi_complement = azi_complement % 360
+            azi_machine_complement = round((self.max_steps / 360) * azi_complement)
+            azi_machine_complement = self.max_steps - (azi_machine_complement % self.max_steps)
+                
+        #For zenith: when azimuth flips 180, zenith becomes 180 - original
+        
+            zeni_intermediate = (-zeni_world) - self.zeni_offset + 180
+            zeni_complement_intermediate = 180 - zeni_intermediate
+            zeni_machine_complement = round((self.max_steps / 360) * zeni_complement_intermediate)
+            zeni_machine_complement = zeni_machine_complement % self.max_steps
+            
+            print(f"Outside limits, using complementary: {azi_machine_complement}, {zeni_machine_complement}")
+            return azi_machine_complement, zeni_machine_complement
+
 
     def convert_sun_to_machine_steps(self, sun_location_azi, sun_location_zeni):
         azi = -sun_location_azi - self.azi_offset
@@ -317,10 +358,10 @@ class SkyScanner():
         print("Finished Moving")
         logging.info('Homed Skyscanner')
         print("Finished Moving SkyScanner to Home Position")
-'''
+    '''
     def get_curr_coords(self):
         #Gets target position of SmartMotor
-        self.ser.write('RPA'.encode())
+        self.ser.write('RP '.encode())
         process_az = self.ser.readline().decode()
         #print('\nget_curr_coords process_az ', repr(process_az))    
         split_by_command_numbers = process_az.split(' ')
@@ -329,30 +370,35 @@ class SkyScanner():
         ze = int(split_by_hash[0])
         az = int(split_by_hash[1])
         return az, ze
-'''	
+    ''' 
     def get_curr_coords(self):
-    	self.ser.reset_input_buffer()
-    	self.ser.write(b'RP\r\n')
-    	_ = self.ser.readline()
-    	
-    	start = time.time()
-    	raw = b''
-    	while time.time() - start < 2.0:
-    	    raw = self.ser.readline()
-    	    if raw:
-    	        break
-    	if not raw:
-    	    raise TimeoutError("No response from motor")
+        self.ser.reset_input_buffer()
+        read_pos = 'RP\n'
+        time.sleep(1)
+        self.ser.write(read_pos.encode())
+        self.ser.flush()
+        time.sleep(1)
+        _ = self.ser.readline()
+        start = time.time()
+        raw = b''
+        while time.time() - start < 10.0:
+            raw = self.ser.readline()
+            if raw:
+                break
+        if not raw:
+            raise TimeoutError("No response from motor")
 
-	decoded = raw.decode(errors='ignore').strip()
-	print("[Debug] Motor replied:", repr(decoded))
-	
-	nums = re.findall(r'-?\d+', decoded)
-	if len(nums) < 2:
-	    raise ValueError(f"Expected two integers but got: {decoded!r}")
-		
-	az, ze = map(int, nums[:2])
-	return az, ze
+        decoded = raw.decode(errors='ignore').strip()
+        print("[Debug] Motor replied:", repr(decoded))
+    
+        nums = re.findall(r'-?\d+', decoded)
+        if len(nums) < 2:
+            raise ValueError(f"Expected two integers but got: {decoded!r}")
+        
+        ze, az = map(int, nums[:2])
+        print("Zenith:", ze)
+        print("Azimuth:", az)
+        return az, ze
 
     def _openSerial(self):
         '''opens serial port and sets handle'''

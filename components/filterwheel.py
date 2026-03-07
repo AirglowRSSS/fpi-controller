@@ -28,7 +28,7 @@ class FilterWheel():
         if ip_address != None:
             try:
                 self.ip_address = ip_address
-                logging.info('Initialized FilterWheel')
+                logging.info(f'Initialized FilterWheel {ip_address}')
                 text = requests.get(url=self.ip_address, timeout=100).text
                 logging.info('FilterWheel response: ' + text)
             except:
