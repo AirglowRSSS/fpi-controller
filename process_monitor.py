@@ -10,8 +10,8 @@ import os
 # Define the processes to monitor with their time windows
 # Dictionary with "process name": ("start time", "stop time")
 processes_to_monitor = {
-    "main_scheduler.py": ("16:00", "06:00", "/usr/bin/python3 /home/airglow/airglow/airglow-controller/main_scheduler.py", "/home/airglow/cron_log.txt"),
-    "skyalert-logger.py": (None, None, "/usr/bin/python3 /home/airglow/airglow/skyalert-logger/skyalert-logger.py", "/home/airglow/skyalert_log.txt")
+    "main_scheduler.py": ("16:00", "06:00", "/home/airglow/airglowrsss/bin/python /home/airglow/airglow/fpi-controller/main_scheduler.py", "/home/airglow/cron_log.txt"),
+    "skyalert-logger.py": (None, None, "/home/airglow/airglowrsss/bin/python /home/airglow/airglow/skyalert-logger/skyalert-logger.py", "/home/airglow/skyalert_log.txt")
 }
 
 site_id = config['site'].lower()
