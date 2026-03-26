@@ -39,6 +39,9 @@ try:
     logging.basicConfig(filename=log_name, encoding='utf-8',
                         format='%(asctime)s %(message)s',  level=config['log_type'])
 
+    # Suppress noisy third-party loggers
+    logging.getLogger("dlipower").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
 
     timeHelper = utilities.time_helper.TimeHelper()
     sunrise = timeHelper.getSunrise()
