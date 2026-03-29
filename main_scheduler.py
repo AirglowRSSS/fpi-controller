@@ -8,7 +8,8 @@ import pickle
 from time import sleep
 from datetime import datetime, timedelta
 import smtplib, ssl
-from config import config, skyscan_config, clemson5_config, filterwheel_config
+#from config import config, skyscan_config, clemson5_config, filterwheel_config
+from config import config, filterwheel_config, skyscan_config
 from schedule import observations
 
 import utilities.time_helper
@@ -133,7 +134,9 @@ try:
     if skyscanner:
         skyscanner = SkyScanner(skyscan_config['max_steps'], skyscan_config['azi_offset'], skyscan_config['zeni_offset'], skyscan_config['azi_world'], skyscan_config['zeni_world'], skyscan_config['number_of_steps'], skyscan_config['port_location'])
     else:
-        skyscanner = Clemson5(clemson5_config['max_steps'], clemson5_config['azi_offset'], clemson5_config['zeni_offset'], clemson5_config['azi_world'], clemson5_config['zeni_world'], clemson5_config['number_of_steps'], clemson5_config['port_location'])
+#        skyscanner = Clemson5(clemson5_config['max_steps'], clemson5_config['azi_offset'], clemson5_config['zeni_offset'], clemson5_config['azi_world'], clemson5_config['zeni_world'], clemson5_config['number_of_steps'], clemson5_config['port_location'])
+        skyscanner = Clemson5(skyscan_config['max_steps'], skyscan_config['azi_offset'], skyscan_config['zeni_offset'], skyscan_config['azi_world'], skyscan_config['zeni_world'], skyscan_config['number_of_steps'], skyscan_config['port_location'])
+
     camera = getCamera("Andor")
     if (filterwheel_serial) & (filterwheel_config['port_location'] != None):
         # Use the serial port
