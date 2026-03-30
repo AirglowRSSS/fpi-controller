@@ -37,7 +37,7 @@ class SkyScanner():
             self._openSerial()
             logging.info('Initialized SkyScanner')
         except:
-            logging.error("Can't open serial port")
+            logging.exception("Can't open SkyScanner serial port")
 
     def set_pos_azi(self, azi_machine_step):
         strr = 'a=%d ' % azi_machine_step
@@ -74,7 +74,7 @@ class SkyScanner():
         azi_ss = np.mod(azi_world+self.azi_offset,360.)
         zeni_ss = zeni_world+self.zeni_offset
 
-        logging.info("SkyScanner moving to (az, ze) of world: (%.2f, %.2f), SS: (%.2f, %.2f)" % (azi_world, zeni_world, azi_ss, zeni_ss))
+        logging.debug("SkyScanner moving to (az, ze) of world: (%.2f, %.2f), SS: (%.2f, %.2f)" % (azi_world, zeni_world, azi_ss, zeni_ss))
 
         try:
             self.ser.write("S?\r".encode())
@@ -106,7 +106,7 @@ class SkyScanner():
 #            azi_curr, zeni_curr = self.get_world_coords()
 #            logging.info("SkyScanner current location azi: %.2f, and zeni: %2f" %(azi_curr, zeni_curr))
         except Exception as e:
-            logging.error('Error moving SkyScanner %s', e)
+            logging.exception('Error moving SkyScanner %s', e)
 
 
 
@@ -348,7 +348,7 @@ class SkyScanner():
             az=float(pos[0])
             ze=float(pos[1])
         except:
-            logging.error('ERROR GETTING COORDS FROM SS')
+            logging.exception('ERROR GETTING COORDS FROM SS')
             az = None
             ze = None
             raise Exception("Error getting coordinates from SkyScanner")
