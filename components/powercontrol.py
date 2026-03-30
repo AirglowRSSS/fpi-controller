@@ -40,7 +40,7 @@ class PowerControl:
                                    text=True)
             return True
         except subprocess.CalledProcessError as e:
-            logging.error(f"Legacy controller command failed: {e}")
+            logging.exception(f"Legacy controller command failed: {e}")
             return False
     
     def _get_legacy_status(self, port):
@@ -70,7 +70,7 @@ class PowerControl:
             if self.switch.status(port) == 'ON':
                 logging.info(f"Powered on port {port}")
             else:
-                logging.error(f"Cannot power on port {port}")
+                logging.error(f"Cannot power on port {port}. Status is {self.switch.status(port)}")
     
     def turnOff(self, port):
         if port is None:
@@ -92,7 +92,7 @@ class PowerControl:
             if self.switch.status(port) == 'OFF':
                 logging.info(f"Powered off port {port}")
             else:
-                logging.error(f"Cannot power off port {port}")
+                logging.error(f"Cannot power off port {port}. Status is {self.switch.status(port)}")
     
     def cycle(self, port):
         if port is None:
