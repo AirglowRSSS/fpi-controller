@@ -13,19 +13,20 @@ class AndorCamera:
 
     def __init__(self):
         re = andorsdk.initialize()
-        logging.info("CCD init: " + str(re))
+        logging.debug("CCD init: " + str(re))
         logging.info('Initialized CCD')
         print(re)
 
     def getTemperature(self):
         re = andorsdk.getTemperature()
-        print(re[0])
+#        print(re[0])
         logging.debug("CCD get temp: " + str(re[0]) + " " + str(re[1]))
         return re[1]
 
     def getTemperatureRange(self):
         re = andorsdk.getTemperatureRange()
-        print(re[0])
+#        print(re[0])
+        logging.debug("CCD get temperature range: " + str(re[0]) + " " + str(re[1]) + " " + str(re[2]))
         return (re[1], re[2])
 
     def setTemperature(self, t):
@@ -67,12 +68,12 @@ class AndorCamera:
     def setShutter(self, typ=0, mode=0, closingtime=0, openingtime=0):
         re = andorsdk.setShutter(typ, mode, closingtime, openingtime)
         logging.debug("CCD set shutter: " + str(re))
-        print(re)
+#        print(re)
 
     def setAcquisitionMode(self, mode=1):
         re = andorsdk.setAcquisitionMode(mode)
         logging.debug("CCD set acquisition mode: " + str(re))
-        print(re)
+#        print(re)
 
     def setImage(self, hbin=2, vbin=2, hstart=1, hend=1024, vstart=1, vend=1024):
         self.hbin = hbin
@@ -83,19 +84,19 @@ class AndorCamera:
         self.vend = vend
         re = andorsdk.setImage(hbin, vbin, hstart, hend, vstart, vend)
         logging.debug("CCD set image: " + str(re))
-        print(re)
+#        print(re)
 
     def startAcquisition(self):
         re = andorsdk.startAcquisition()
         logging.debug("CCD start acquisition: " + str(re))
-        print(re)
+#        print(re)
 
     def getStatus(self):
         """Get the current status
         """
         re = andorsdk.getStatus()
         logging.debug("CCD status: " + str(re[0]) + " " + str(re[1]))
-        print(re[0])
+#        print(re[0])
         return re[1]
 
     def getImage(self):
@@ -109,9 +110,8 @@ class AndorCamera:
 
         re = andorsdk.getImage(self.hbin, self.vbin,
                                self.hstart, self.hend, self.vstart, self.vend)
-        logging.debug("CCD get image: " + str(re[0]))
-        print(re[0])
-
+        logging.debug("CCD get image: " + str(re[0]) + " " + str(re[1]))
+#        print(re[0])
         return re[1]
 
     def setShiftSpeed(self, indexH=2, indexV=2, preAmpGain=2, ttype=0):
