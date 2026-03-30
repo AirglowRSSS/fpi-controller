@@ -23,7 +23,7 @@ class FilterWheel():
                 )
                 logging.info('Initialized FilterWheel')
             except:
-                print("Can't open serial port")
+                logging.exception("Can't open FilterWheel serial port")
             return
         if ip_address != None:
             try:
@@ -32,32 +32,36 @@ class FilterWheel():
                 text = requests.get(url=self.ip_address, timeout=100).text
                 logging.info('FilterWheel response: ' + text)
             except:
-                print("Can't open serial port")
+                logging.exception("Can't open FilterWheel network port")
 
     def home(self):
         if self.ser != None:
             try:
+                logging.debug('Homing FilterWheel')
                 self.ser.write('home\n'.encode())
                 sleep(10)
                 res = self.ser.readline()
-                logging.info('FilterWheel response: ' + res.decode())
+                logging.info('Homing FilterWheel response: ' + res.decode())
             except:
-                logging.error('Cannot write to FilterWheel')
+                logging.exception('Cannot write to FilterWheel')
             return
         if self.ip_address != None:
+            logging.debug('Homing FilterWheel')
             text = requests.get(url=self.ip_address + 'home', timeout=100).text
-            logging.info('FilterWheel response: ' + text)
-        
+            logging.info('Homing FilterWheel response: ' + text)
+
     def go(self, position):
         if self.ser != None:
             try:
+                logging.debug('Moving FilterWheel to position ' + str(position))
                 self.ser.write(f'go{position}\n'.encode())
                 sleep(10)
                 res = self.ser.readline()
-                logging.info('FilterWheel response: ' + res.decode())
+                logging.info('Moving FilterWheel response: ' + res.decode())
             except:
-                logging.error('Cannot write to FilterWheel')
+                logging.exception('Cannot write to FilterWheel')
             return
         if self.ip_address != None:
+            logging.debug('Moving FilterWheel to position ' + str(position))
             text = requests.get(url=self.ip_address + f'go/{position}', timeout=100).text
-            logging.info('FilterWheel response: ' + text)
+            logging.info('Moving FilterWheel response: ' + text)
