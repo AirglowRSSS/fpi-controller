@@ -84,7 +84,7 @@ try:
                 found = True
         
         if SkyAlert_IP is None:
-            logging.info('Could not find SkyAlert after power cycle')
+            logging.warning('Could not find SkyAlert after power cycle')
 
     # Make sure we can find the filterwheel if needed
     filterwheel_serial = False
@@ -96,7 +96,7 @@ try:
             filterwheel_serial = False
             logging.info('Found FilterWheel at %s' % filterwheel_IP)
         else:
-            logging.info('Could not find the IP address for the filterwheel. Rebooting.')
+            logging.warning('Could not find the IP address for the filterwheel. Rebooting.')
             powerControl.turnOff(config['FilterWheelControlPowerPort'])
             sleep(5)
             powerControl.turnOn(config['FilterWheelControlPowerPort'])
@@ -107,7 +107,7 @@ try:
                 filterwheel_serial = False
                 logging.info('Found FilterWheel at %s' % filterwheel_IP)
             else:
-                logging.info('Still cannot find IP address fo the filterwheel. Waiting...')
+                logging.warning('Still cannot find IP address fo the filterwheel. Waiting...')
                 wait_count = 0
                 found = False
                 while wait_count < 5 and found == False:
@@ -149,6 +149,7 @@ try:
 
     # Signal to response to interupt/kill signal
     def signal_handler(sig, frame):
+        logging.critical('Something went wrong or the program was interupted. Turning off components and exiting.')
         skyscanner.go_home()
         fw.go(filterwheel_config['park_position'])
         camera.turnOffCooler()
@@ -158,7 +159,7 @@ try:
         powerControl.turnOff(config['SkyScannerPowerPort'])
         powerControl.turnOff(config['LaserPowerPort'])
         powerControl.turnOff(config['FilterWheelPowerPort'])
-        logging.info('Exiting')
+        logging.critical('Exiting after powering off components')
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -177,7 +178,7 @@ try:
 
     logging.info("Waiting for sunset: " + str(sunset))
     timeHelper.waitUntilStartTime()
-    logging.info('Sunset time start')
+    logging.info('Sunset time reached')
 
     # Create data directroy based on the current sunset time
     data_folder_name = config['data_dir'] + sunset.strftime('%Y%m%d')
@@ -195,17 +196,17 @@ try:
         dark_image = imageTaker.take_dark_image(config["dark_expose"], 0, 0)
 
         # Move sky scanner and filterwheel
-        logging.info('Moving SkyScanner to laser position: %.2f, %.2f' % (
+        logging.debug('Moving SkyScanner to laser position: %.2f, %.2f' % (
             config['azi_laser'], config['zen_laser']))
         skyscanner.set_pos_real(config['azi_laser'], config['zen_laser'])
         world_az, world_zeni = skyscanner.get_world_coords()
-        logging.info("The Sky Scanner has moved to azi: %.2f, and zeni: %.2f" %(world_az, world_zeni))
+        logging.info("The Sky Scanner has moved to laser position: %.2f, %.2f" %(world_az, world_zeni))
 
         # Move the filterwheel
         if isinstance(filterwheel_config['laser_position'], int):
-            logging.info('Moving FilterWheel to laser position: %d' % (filterwheel_config['laser_position']))
+            logging.debug('Moving FilterWheel to laser position: %d' % (filterwheel_config['laser_position']))
             fw.go(filterwheel_config['laser_position'])
-            logging.info("Moved FilterWheel")
+            logging.info("Moved FilterWheel to laser position: %d" % (filterwheel_config['laser_position']))
 
         logging.info('Taking laser image')
         laser_image = imageTaker.take_laser_image(
@@ -213,7 +214,7 @@ try:
         if config['laser_timedelta'] is not None:
             config['laser_lasttime'] = datetime.now()
     else:
-        logging.info('Skipped initial images because we are more than 10 minutes after sunset')
+        logging.warning('Skipped initial images because we are more than 10 minutes after sunset')
         if config['laser_timedelta'] is not None:
             config['laser_lasttime'] = datetime.now()
 
@@ -222,7 +223,7 @@ try:
     while (datetime.now() <= sunrise):
         for observation in observations:
             if (datetime.now() >= sunrise):
-                logging.info('Inside observation loop, but after sunrise! Exiting')
+                logging.warning('Inside observation loop, but after sunrise! Exiting')
                 break
             
             currThresholdMoonAngle = skyscanner.get_moon_angle(config['latitude'], config['longitude'], observation['skyScannerLocation'][0], observation['skyScannerLocation'][1])
@@ -234,17 +235,17 @@ try:
 #                    observation['skyScannerLocation'][0], observation['skyScannerLocation'][1]))   
                 continue
 
-            logging.info('Moving SkyScanner to: %.2f, %.2f' % (
+            logging.debug('Moving SkyScanner to: %.2f, %.2f' % (
                 observation['skyScannerLocation'][0], observation['skyScannerLocation'][1]))
             skyscanner.set_pos_real(
                 observation["skyScannerLocation"][0], observation['skyScannerLocation'][1])
             world_az, world_zeni = skyscanner.get_world_coords()
-            logging.info("The Sky Scanner has moved to azi: %.2f, and zeni: %.2f" %(world_az, world_zeni))
+            logging.info("The Sky Scanner has moved to %.2f, %.2f" %(world_az, world_zeni))
 
             # Move the filterwheel
-            logging.info('Moving FilterWheel to: %d' % (observation['filterPosition']))
+            logging.debug('Moving FilterWheel to: %d' % (observation['filterPosition']))
             fw.go(observation['filterPosition'])
-            logging.info("Moved FilterWheel")
+            logging.info("Moved FilterWheel to position: %d" % (observation['filterPosition']))
 
             logging.info('Taking sky exposure')
 
@@ -270,26 +271,27 @@ try:
             observation['lastIntensity'] = image_intensity
             observation['lastExpTime'] = observation['exposureTime']
 
-            logging.info('Image intensity: {:.2f}'.format(image_intensity))
+            logging.debug('Image intensity: {:.2f}'.format(image_intensity))
 
             # Check if we should take a laser image
-            logging.info('Time since last laser ' +  str(datetime.now() - config['laser_lasttime']))
+            elapsed = datetime.now() - config['laser_lasttime']
+            elapsed_clean = elapsed - timedelta(microseconds=elapsed.microseconds)
             take_laser = (datetime.now() - config['laser_lasttime']) > config['laser_timedelta']
-            logging.info('Take_laser is ' + str(take_laser))
+            logging.debug(f'Time since last laser {elapsed_clean}. Take_laser is {take_laser}')
             if take_laser:
 #                world_az, world_zeni = skyscanner.get_world_coords()
 #                logging.info("The Sky Scanner is pointed at laser position of azi: %.2f and zeni %.2f" %(world_az, world_zeni))
-                logging.info('Moving SkyScanner to laser position: %.2f, %.2f' % (
+                logging.debug('Moving SkyScanner to laser position: %.2f, %.2f' % (
                     config['azi_laser'], config['zen_laser']))
                 skyscanner.set_pos_real(config['azi_laser'], config['zen_laser'])
                 world_az, world_zeni = skyscanner.get_world_coords()
-                logging.info("The Sky Scanner has moved to azi: %.2f, and zeni: %.2f" %(world_az, world_zeni))
+                logging.info("The Sky Scanner has moved to laser position: %.2f, %.2f" %(world_az, world_zeni))
 
                 # Move the filterwheel
                 if isinstance(filterwheel_config['laser_position'], int):
-                    logging.info('Moving FilterWheel to laser position: %d' % (filterwheel_config['laser_position']))
+                    logging.debug('Moving FilterWheel to laser position: %d' % (filterwheel_config['laser_position']))
                     fw.go(filterwheel_config['laser_position'])
-                    logging.info("Moved FilterWheel")
+                    logging.info("Moved FilterWheel to laser position: %d" % (filterwheel_config['laser_position']))
 
                 logging.info('Taking laser image')
                 laser_image = imageTaker.take_laser_image(
@@ -302,7 +304,7 @@ try:
     logging.info('Warming up CCD')
     camera.turnOffCooler()
     while (camera.getTemperature() < -20):
-        logging.info('CCD Temperature: ' + str(camera.getTemperature()))
+        logging.debug('CCD Temperature: ' + str(camera.getTemperature()))
         sleep(10)
 
     logging.info('Shutting down CCD')
@@ -317,9 +319,9 @@ try:
     logging.info('Executed flawlessly, exitting')
 
 except Exception as e:
-    logging.error(e)
+    logging.exception(e)
 
-    logging.error('Turning off components')
+    logging.error('Turning off components after exception')
     powerControl = PowerControl(config['powerSwitchAddress'], config['powerSwitchUser'], config['powerSwitchPassword'],legacy_controller=config['powerSwitchLegacy'])
     powerControl.turnOff(config['AndorPowerPort'])
     powerControl.turnOff(config['SkyScannerPowerPort'])
