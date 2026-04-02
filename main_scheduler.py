@@ -8,7 +8,7 @@ import pickle
 from time import sleep
 from datetime import datetime, timedelta
 import smtplib, ssl
-from config import config, skyscan_config, clemson5_config, filterwheel_config
+from config import config, skyscan_config, filterwheel_config
 from schedule import observations
 
 import utilities.time_helper
@@ -84,7 +84,7 @@ try:
 
     # Make sure we can find the filterwheel if needed
     filterwheel_serial = False
-    if filterwheel_config['port_location'] != None:
+    if filterwheel_config['ip_address'] != None:
 #        filterwheel_serial = False
         filterwheel_IP = get_IP_from_MAC(filterwheel_config['MAC_address'])
         if filterwheel_IP is not None:
@@ -247,6 +247,9 @@ try:
             else:
                 observation['exposureTime'] = min(0.5*observation['lastExpTime']*(1 + observation['desiredIntensity']/observation['lastIntensity']),
                                                 config['maxExposureTime'])
+
+            # JJM
+            observation['exposureTime'] = observation['defaultExposureTime']
 
             logging.info('Calculated exposure time: {:.1f}'.format(observation['exposureTime']))
 
