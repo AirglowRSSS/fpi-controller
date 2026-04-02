@@ -60,8 +60,10 @@ class SkyScanner():
         logging.debug("Moving Skyscanner to Azi Machine Step: ", azi, " Zeni Machine Step: ", zeni)
         while (azi != azi1 or zeni != zeni1):
             # print(azi, azi1, zeni, zeni1)
-            logging.debug("Current Azi Pos:", azi1, " ||||  Target Azi Pos:", azi)
-            logging.debug("Current Zeni Pos:", zeni1, " ||||  Target Zeni Pos", zeni)
+#            logging.debug("Current Azi Pos:", azi1, " ||||  Target Azi Pos:", azi)
+#            logging.debug("Current Zeni Pos:", zeni1, " ||||  Target Zeni Pos", zeni)
+            logging.debug(f"Current Azi Pos: {azi1:.1f}  ||||  Target Azi Pos: {azi:.1f}")
+            logging.debug(f"Current Zeni Pos: {zeni1:.1f}  ||||  Target Zeni Pos: {zeni:.1f}")
 
             azi1, zeni1 = self.get_curr_coords()
             sleep(2)
@@ -343,7 +345,8 @@ class SkyScanner():
 
         # Read the serial line
         pos = str.split(',')
-        logging.debug('SS: get_curr_pos: %s; count: %d', str, count)
+#        logging.debug('SS: get_curr_pos: %s; count: %d', str, count)
+        logging.debug(f"SS: get_curr_pos: {float(pos[0]):.1f}, {float(pos[1]):.1f}; count: {count}")
         try:
             az=float(pos[0])
             ze=float(pos[1])
