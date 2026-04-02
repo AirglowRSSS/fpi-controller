@@ -39,7 +39,7 @@ class SkyScanner():
             self._openSerial()
             logging.info('Initialized SkyScanner')
         except:
-            logging.info("Can't open serial port")
+            logging.exception("Can't open SkyScanner serial port")
 
     def set_pos_azi(self, azi_machine_step):
         strr = 'a=%d ' % azi_machine_step
@@ -59,10 +59,10 @@ class SkyScanner():
         self.ser.write('GOSUB4 '.encode())
         process_az = self.ser.readline().decode()
         azi1, zeni1 = self.get_curr_coords()
-        logging.info("Moving Skyscanner to Azi Machine Step: ", azi, " Zeni Machine Step: ", zeni)
+        logging.debug("Moving Skyscanner to Azi Machine Step: ", azi, " Zeni Machine Step: ", zeni)
         count = 0
         while (azi != azi1 or zeni != zeni1):
-            print(azi, azi1, zeni, zeni1)
+#            print(azi, azi1, zeni, zeni1)
             logging.debug("Current Azi Pos:", azi1, " ||||  Target Azi Pos:", azi)
             logging.debug("Current Zeni Pos:", zeni1, " ||||  Target Zeni Pos", zeni)
 
@@ -84,9 +84,9 @@ class SkyScanner():
 
     def set_pos_real(self, azi_world, zeni_world):
         azi, zeni = self.convert_to_machine_steps(azi_world, zeni_world)
-        print("THIS is where I am moving", azi, zeni)
-        logging.info("SkyScanner moving to azi: %.2f, and zeni: %.2f" %(azi_world, zeni_world))
-        logging.info("SkyScanner moving to machine step azi: %.2f, and zeni: %.2f" %(azi, zeni))
+#        print("THIS is where I am moving", azi, zeni)
+        logging.debug("SkyScanner moving to azi: %.2f, and zeni: %.2f" %(azi_world, zeni_world))
+        logging.debug("SkyScanner moving to machine step azi: %.2f, and zeni: %.2f" %(azi, zeni))
         self.ser.write(('a=%d ' % azi).encode())
         self.ser.write(('z=%d ' % zeni).encode())
         time.sleep(0.5)
@@ -99,12 +99,12 @@ class SkyScanner():
             logging.debug('set_pos_real while loop (goal, actual) az = (%.2f %.2f), ze = (%.2f %.2f)' % (azi, azi1, zeni, zeni1))
             azi1, zeni1 = self.get_curr_coords()
             sleep(2)
-            print("Waiting ", count)
+#            print("Waiting ", count)
             
             count = count+1
             if count > 10:
-                print('resending commands')
-                logging.info('SkyScanner had to resend commands')
+#                print('resending commands')
+                logging.debug('SkyScanner had to resend commands')
                 count = 0
                 self.ser.write(('a=%d ' % azi).encode())
                 self.ser.write(('z=%d ' % zeni).encode())
@@ -114,9 +114,9 @@ class SkyScanner():
 
         azi1, zeni1 = self.get_curr_coords()
         azi_curr, zeni_curr = self.get_world_coords()
-        logging.info("SkyScanner current location azi: %.2f, and zeni: %.2f" %(azi_curr, zeni_curr))
-        logging.info("SkyScanner current machine step azi: %.2f, and zeni: %.2f" %(azi1, zeni1))
-        print("Finished Moving")
+        logging.debug("SkyScanner current location azi: %.2f, and zeni: %.2f" %(azi_curr, zeni_curr))
+        logging.debug("SkyScanner current machine step azi: %.2f, and zeni: %.2f" %(azi1, zeni1))
+        logging.debug("Finished Moving")
 
 
 
@@ -153,7 +153,7 @@ class SkyScanner():
         #limit checking
         if (azi_limits[0] <= azi_machine_step <= azi_limits[1]) and (zeni_limits[0] <= zeni_machine_step <= zeni_limits[1]):
            
-           print(f"Within limits: {azi_machine_step}, {zeni_machine_step}")
+           logging.debug(f"Within limits: {azi_machine_step}, {zeni_machine_step}")
            return azi_machine_step, zeni_machine_step
            
         else:
@@ -182,7 +182,7 @@ class SkyScanner():
             zeni_machine_complement = round((self.max_steps / 360) * zeni_complement_intermediate)
             zeni_machine_complement = zeni_machine_complement % self.max_steps
             
-            print(f"Outside limits, using complementary: {azi_machine_complement}, {zeni_machine_complement}")
+            logging.debug(f"Outside limits, using complementary: {azi_machine_complement}, {zeni_machine_complement}")
             return azi_machine_complement, zeni_machine_complement
 
 
@@ -355,9 +355,9 @@ class SkyScanner():
         logging.info('Homing Skyscanner')
         self.ser.write('GOSUB5 '.encode())
         sleep(45)
-        print("Finished Moving")
+#        print("Finished Moving")
         logging.info('Homed Skyscanner')
-        print("Finished Moving SkyScanner to Home Position")
+#        print("Finished Moving SkyScanner to Home Position")
     '''
     def get_curr_coords(self):
         #Gets target position of SmartMotor
@@ -389,15 +389,15 @@ class SkyScanner():
             raise TimeoutError("No response from motor")
 
         decoded = raw.decode(errors='ignore').strip()
-        print("[Debug] Motor replied:", repr(decoded))
+        logging.debug("[Debug] Motor replied:", repr(decoded))
     
         nums = re.findall(r'-?\d+', decoded)
         if len(nums) < 2:
             raise ValueError(f"Expected two integers but got: {decoded!r}")
         
         ze, az = map(int, nums[:2])
-        print("Zenith:", ze)
-        print("Azimuth:", az)
+#        print("Zenith:", ze)
+#        print("Azimuth:", az)
         return az, ze
 
     def _openSerial(self):

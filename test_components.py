@@ -25,8 +25,9 @@ from components.skyalert import SkyAlert
 from components.powercontrol import PowerControl
 from components.filterwheel import FilterWheel
 
-skyscanner = True
+from utilities.get_IP import get_IP_from_MAC
 
+skyscanner = True
 if skyscan_config['type'] == 'KEO':
     from components.sky_scanner_keo import SkyScanner
 elif skyscan_config['type'] == 'Clemson':
@@ -60,15 +61,24 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # 	gmail
 
 #what_to_test = ['LaserShutter']
+<<<<<<< Updated upstream
 #what_to_test = ['SkyAlert']
 #what_to_test = ['Sequence']
 what_to_test = ['SkyScanner']
+=======
+what_to_test = ['SkyAlert']
+#what_to_test = ['SkyAlert', 'FilterWheel','LaserShutter']
+#what_to_test = ['Sequence']
+#what_to_test = ['SkyScanner']
+#what_to_test = ['CCD']
+>>>>>>> Stashed changes
 #what_to_test = ['FilterWheel']
 
 powerControl = PowerControl(config['powerSwitchAddress'], config['powerSwitchUser'], config['powerSwitchPassword'])
 
 if 'CCD' in what_to_test:
     powerControl.turnOn(config['AndorPowerPort'])
+    sleep(2)
     logging.info('Initializing CCD')
     camera = getCamera("Andor")
     camera.setTemperature(-40)
@@ -131,6 +141,25 @@ if 'SkyScanner' in what_to_test:
     powerControl.turnOff(config['SkyScannerPowerPort'])
 
 if 'SkyAlert' in what_to_test:
+    SkyAlert_IP = get_IP_from_MAC(config['skyAlertMAC'])
+    if SkyAlert_IP is not None:
+        config['skyAlertAddress'] = 'http://' + SkyAlert_IP + ':81'
+        logging.info('Found SkyAlert at %s' % SkyAlert_IP)
+    else:
+        wait_count = 0
+        found = False
+        while wait_count < 5 and found == False:
+            wait_count = wait_count+1
+            sleep(15)
+            SkyAlert_IP = get_IP_from_MAC(config['skyAlertMAC'])
+            if SkyAlert_IP is not None:
+                config['skyAlertAddress'] = 'http://' + SkyAlert_IP + ':81'
+                logging.info('Found SkyAlert at %s' % SkyAlert_IP)
+                found = True
+        
+        if SkyAlert_IP is None:
+            logging.info('Could not find SkyAlert after power cycle')
+    
     sa = SkyAlert(config['skyAlertAddress'])
     logging.info(sa.getList())
 

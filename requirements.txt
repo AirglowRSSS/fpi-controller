@@ -13,3 +13,5 @@ h5py
 keyboard
 sshkeyboard
 dlipower
+setuptools
+pyasyncore
