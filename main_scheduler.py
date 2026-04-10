@@ -10,6 +10,10 @@ from datetime import datetime, timedelta
 import smtplib, ssl
 #from config import config, skyscan_config, clemson5_config, filterwheel_config
 from config import config, filterwheel_config, skyscan_config
+
+if 'max_consecutive_errors' not in config:
+    logging.warning("'max_consecutive_errors' not found in config; defaulting to 3")
+    config['max_consecutive_errors'] = 3
 from schedule import observations
 
 import utilities.time_helper
@@ -220,6 +224,7 @@ try:
 
 
     # Main loop
+    consecutive_errors = 0
     while (datetime.now() <= sunrise):
         for observation in observations:
             if (datetime.now() >= sunrise):
@@ -261,10 +266,29 @@ try:
             logging.info('Calculated exposure time: {:.1f}'.format(observation['exposureTime']))
 
             # Take image
-            new_image = imageTaker.take_normal_image(observation['imageTag'],
-                                                    observation['exposureTime'],
-                                                    observation['skyScannerLocation'][0],
-                                                    observation['skyScannerLocation'][1], skyscanner)
+            try:
+                new_image = imageTaker.take_normal_image(observation['imageTag'],
+                                                         observation['exposureTime'],
+                                                         observation['skyScannerLocation'][0],
+                                                         observation['skyScannerLocation'][1],
+                                                         skyscanner)
+                consecutive_errors = 0  # reset on success
+
+            except Exception as e:
+                consecutive_errors += 1
+                logging.exception(
+                    'Error taking image (consecutive errors: %d/%d): %s',
+                    consecutive_errors, config['max_consecutive_errors'], e
+                )
+                if consecutive_errors >= config['max_consecutive_errors']:
+                    logging.critical(
+                        'Reached %d consecutive image errors. Treating as unrecoverable fault.',
+                        config['max_consecutive_errors']
+                    )
+                    raise  # re-raise to outer except, which handles power-off and shutdown
+                else:
+                    skyscanner.ser.reset_input_buffer()
+                    continue
 
             image_sub = scipy.signal.convolve2d(
                 new_image[config['i1']:config['i2'], config['j1']:config['j2']], numpy.ones((config['N'], config['N']))/config['N']**2, mode='valid')

@@ -25,6 +25,7 @@ config = {
     'laser_lasttime': None,
     'maxExposureTime': 600,
     'moonThresholdAngle': 37,
+    'max_consecutive_errors': 3,
 
     # Camera setting
     'hbin': 2,

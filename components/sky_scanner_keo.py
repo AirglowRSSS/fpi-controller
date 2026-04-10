@@ -43,19 +43,19 @@ class SkyScanner():
         strr = 'a=%d ' % azi_machine_step
         self.ser.write(strr.encode())
         self.ser.write('GOSUB4 '.encode())
-        process_az = self.ser.readline().decode()
+        process_az = self.ser.readline().decode('latin-1')
 
     def set_pos_zeni(self, zeni_machine_step):
         strr = 'z=%d ' % zeni_machine_step
         self.ser.write(strr.encode())
         self.ser.write('GOSUB4 '.encode())
-        process_az = self.ser.readline().decode()
+        process_az = self.ser.readline().decode('latin-1')
 
     def set_pos(self, azi, zeni):
         self.ser.write(('a=%d ' % azi).encode())
         self.ser.write(('z=%d ' % zeni).encode())
         self.ser.write('GOSUB4 '.encode())
-        process_az = self.ser.readline().decode()
+        process_az = self.ser.readline().decode('latin-1')
         azi1, zeni1 = self.get_curr_coords()
         logging.debug("Moving Skyscanner to Azi Machine Step: ", azi, " Zeni Machine Step: ", zeni)
         while (azi != azi1 or zeni != zeni1):
@@ -82,9 +82,9 @@ class SkyScanner():
             self.ser.write("S?\r".encode())
             sleep(1)
 #            res = self.ser.readline().decode()
-            res = self.ser.read_until(b'\r').decode()
+            res = self.ser.read_until(b'\r').decode('latin-1')
             res = res.strip()
-            trash = self.ser.readline().decode()
+            trash = self.ser.readline().decode('latin-1')
 #            print('PRIOR TO MOVE STATUS: [%s]' % res)
             self.ser.write("P(%.2f,%.2f)\r".encode() % (azi_ss, zeni_ss))
 
@@ -95,7 +95,7 @@ class SkyScanner():
                 count = count+1
                 self.ser.write("S?\r".encode())
                 sleep(1)
-                res = self.ser.readline().decode()
+                res = self.ser.readline().decode('latin-1')
 #                print('SET POS [%s]' % res)
                 if ("!P:1" in res):
                     moving = False
@@ -303,7 +303,7 @@ class SkyScanner():
             self.ser.write("S?\r".encode())
             sleep(1)
 #            res = self.ser.readline().decode()
-            res = self.ser.read_until(b'\r').decode()
+            res = self.ser.read_until(b'\r').decode('latin-1')
             res = res.strip()
 
 #            print('HOMING: [%s]' % res)
@@ -323,8 +323,13 @@ class SkyScanner():
         '''Gets target position of SmartMotor'''
         self.ser.write("S?\r".encode())
         sleep(1)
-        str = self.ser.read_until(b'\r').decode()
-        trash = self.ser.readline().decode()
+        try:
+            str = self.ser.read_until(b'\r').decode('latin-1')
+            trash = self.ser.readline().decode('latin-1')
+        except Exception:
+            logging.exception('Serial read error on S? in get_curr_coords; flushing buffer')
+            self.ser.reset_input_buffer()
+            str = ""
 
         logging.debug('SS: response to S?: %s', str)
 
@@ -332,25 +337,28 @@ class SkyScanner():
         reading = True
 
         while (reading == True) and (count < 20):
-            count = count+1 
-
-            # Flush the serial line out
+            count += 1
+            self.ser.reset_input_buffer()
             self.ser.write("P?\r".encode())
             sleep(1)
-            str = self.ser.read_until(b'\r').decode()
-            trash = self.ser.readline().decode()
+            try:
+                str = self.ser.read_until(b'\r').decode('latin-1')
+                trash = self.ser.readline().decode('latin-1')
+            except Exception:
+                logging.exception('Serial read error on P? in get_curr_coords; flushing buffer')
+                self.ser.reset_input_buffer()
+                str = ""
+                continue
 
             if "," in str:
                 reading = False
 
-        # Read the serial line
         pos = str.split(',')
-#        logging.debug('SS: get_curr_pos: %s; count: %d', str, count)
         logging.debug(f"SS: get_curr_pos: {float(pos[0]):.1f}, {float(pos[1]):.1f}; count: {count}")
         try:
-            az=float(pos[0])
-            ze=float(pos[1])
-        except:
+            az = float(pos[0])
+            ze = float(pos[1])
+        except Exception:
             logging.exception('ERROR GETTING COORDS FROM SS')
             az = None
             ze = None
