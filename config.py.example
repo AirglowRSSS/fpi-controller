@@ -26,6 +26,7 @@ config = {
     'maxExposureTime': 600,
     'moonThresholdAngle': 37,
     'max_consecutive_errors': 3,
+    'staticIntegration': True,
 
     # Camera setting
     'hbin': 2,
