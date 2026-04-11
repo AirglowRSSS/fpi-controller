@@ -302,11 +302,13 @@ class SkyScanner():
             sleep(1)
             self.ser.write("S?\r".encode())
             sleep(1)
-#            res = self.ser.readline().decode()
-            res = self.ser.read_until(b'\r').decode('latin-1')
-            res = res.strip()
-
-#            print('HOMING: [%s]' % res)
+            try:
+                res = self.ser.read_until(b'\r').decode('latin-1')
+                res = res.strip()
+            except Exception:
+                logging.exception('Serial read error in go_home; flushing buffer')
+                self.ser.reset_input_buffer()
+                res = ""
 
             if "!H:1" in res:
                 moving = False
@@ -353,16 +355,21 @@ class SkyScanner():
             if "," in str:
                 reading = False
 
+        if reading:
+            # Exhausted all retries without a valid response
+            logging.error('get_curr_coords: no valid P? response after %d attempts', count)
+            raise Exception("Error getting coordinates from SkyScanner")
+
         pos = str.split(',')
-        logging.debug(f"SS: get_curr_pos: {float(pos[0]):.1f}, {float(pos[1]):.1f}; count: {count}")
         try:
             az = float(pos[0])
             ze = float(pos[1])
         except Exception:
             logging.exception('ERROR GETTING COORDS FROM SS')
-            az = None
-            ze = None
             raise Exception("Error getting coordinates from SkyScanner")
+
+        # Moved here — only reached after confirmed successful conversion
+        logging.debug(f"SS: get_curr_pos: {az:.1f}, {ze:.1f}; count: {count}")
 
         # These are in SS coordinates
         return az, ze

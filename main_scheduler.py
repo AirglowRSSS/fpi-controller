@@ -223,6 +223,25 @@ try:
             config['laser_lasttime'] = datetime.now()
 
 
+    def get_world_coords_safe(skyscanner, config, consecutive_errors):
+        try:
+            world_az, world_zeni = skyscanner.get_world_coords()
+            return world_az, world_zeni, 0  # reset counter on success
+        except Exception as e:
+            consecutive_errors += 1
+            logging.exception(
+                'Error reading SkyScanner position (consecutive errors: %d/%d): %s',
+                consecutive_errors, config['max_consecutive_errors'], e
+            )
+            if consecutive_errors >= config['max_consecutive_errors']:
+                logging.critical(
+                    'Reached %d consecutive errors. Treating as unrecoverable fault.',
+                    config['max_consecutive_errors']
+                )
+                raise
+            skyscanner.ser.reset_input_buffer()
+            return None, None, consecutive_errors  # caller must check for None
+
     # Main loop
     consecutive_errors = 0
     while (datetime.now() <= sunrise):
@@ -244,8 +263,9 @@ try:
                 observation['skyScannerLocation'][0], observation['skyScannerLocation'][1]))
             skyscanner.set_pos_real(
                 observation["skyScannerLocation"][0], observation['skyScannerLocation'][1])
-            world_az, world_zeni = skyscanner.get_world_coords()
-            logging.info("The Sky Scanner has moved to %.2f, %.2f" %(world_az, world_zeni))
+            world_az, world_zeni, consecutive_errors = get_world_coords_safe(skyscanner, config, consecutive_errors)
+            if world_az is not None:
+                logging.info("The Sky Scanner has moved to %.2f, %.2f" %(world_az, world_zeni))
 
             # Move the filterwheel
             logging.debug('Moving FilterWheel to: %d' % (observation['filterPosition']))
@@ -311,8 +331,9 @@ try:
                 logging.debug('Moving SkyScanner to laser position: %.2f, %.2f' % (
                     config['azi_laser'], config['zen_laser']))
                 skyscanner.set_pos_real(config['azi_laser'], config['zen_laser'])
-                world_az, world_zeni = skyscanner.get_world_coords()
-                logging.info("The Sky Scanner has moved to laser position: %.2f, %.2f" %(world_az, world_zeni))
+                world_az, world_zeni, consecutive_errors = get_world_coords_safe(skyscanner, config, consecutive_errors)
+                if world_az is not None:
+                    logging.info("The Sky Scanner has moved to laser position: %.2f, %.2f" %(world_az, world_zeni))
 
                 # Move the filterwheel
                 if isinstance(filterwheel_config['laser_position'], int):
