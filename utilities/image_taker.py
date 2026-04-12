@@ -56,12 +56,18 @@ class Image_Helper:
         f.attrs['YBinning'] = self.YBinning
 
         # SkyAlert data
-        f.attrs['AmbientTemperature (C)'] = self.skyAlert.getAmbientTemperature()
-        f.attrs['OutsideTemperature (C)'] = self.skyAlert.getSkyTemperature()
-        f.attrs['Pressure (Pa)'] = self.skyAlert.getPressure()
-        f.attrs['Humidity (%)'] = self.skyAlert.getHumidity()
-        # do we need wind speed, dampness, brightness? What unit? 
-
+        if self.skyAlert is not None:
+            f.attrs['AmbientTemperature (C)'] = self.skyAlert.getAmbientTemperature()
+            f.attrs['OutsideTemperature (C)'] = self.skyAlert.getSkyTemperature()
+            f.attrs['Pressure (Pa)'] = self.skyAlert.getPressure()
+            f.attrs['Humidity (%)'] = self.skyAlert.getHumidity()
+            # do we need wind speed, dampness, brightness? What unit? 
+        else:
+            # No SkyAlert connected. Create bogus data
+            f.attrs['AmbientTemperature (C)'] = 0.0
+            f.attrs['OutsideTemperature (C)'] = 0.0
+            f.attrs['Pressure (Pa)'] = 0.0
+            f.attrs['Humidity (%)'] = 0.0
 
         data_files.close()
         self.counter[type] += 1
