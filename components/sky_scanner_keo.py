@@ -81,22 +81,25 @@ class SkyScanner():
         try:
             self.ser.write("S?\r".encode())
             sleep(1)
-#            res = self.ser.readline().decode()
             res = self.ser.read_until(b'\r').decode('latin-1')
+            logging.debug('set_pos_real: response to S?: %s', res)
             res = res.strip()
             trash = self.ser.readline().decode('latin-1')
-#            print('PRIOR TO MOVE STATUS: [%s]' % res)
+            logging.debug('set_pos_real: response to S? readline: %s', trash)
+
             self.ser.write("P(%.2f,%.2f)\r".encode() % (azi_ss, zeni_ss))
 
             moving = True
             SS_error = False
             count = 0
+
             while moving == True:
                 count = count+1
                 self.ser.write("S?\r".encode())
                 sleep(1)
                 res = self.ser.readline().decode('latin-1')
-#                print('SET POS [%s]' % res)
+                logging.debug('set_pos_real: moving response to S?: %s', res)
+
                 if ("!P:1" in res):
                     moving = False
                 if count > 20:
@@ -304,6 +307,7 @@ class SkyScanner():
             sleep(1)
             try:
                 res = self.ser.read_until(b'\r').decode('latin-1')
+                logging.debug('go_home: response to S?: %s', res)
                 res = res.strip()
             except Exception:
                 logging.exception('Serial read error in go_home; flushing buffer')
@@ -327,6 +331,7 @@ class SkyScanner():
         sleep(1)
         try:
             str = self.ser.read_until(b'\r').decode('latin-1')
+            logging.debug('get_curr_coords: response to S?: %s', str)
             trash = self.ser.readline().decode('latin-1')
         except Exception:
             logging.exception('Serial read error on S? in get_curr_coords; flushing buffer')
@@ -345,7 +350,9 @@ class SkyScanner():
             sleep(1)
             try:
                 str = self.ser.read_until(b'\r').decode('latin-1')
+                logging.debug('get_curr_coords: response to P?: %s', str)
                 trash = self.ser.readline().decode('latin-1')
+                logging.debug('get_curr_coords: response to P? readline: %s', trash)
             except Exception:
                 logging.exception('Serial read error on P? in get_curr_coords; flushing buffer')
                 self.ser.reset_input_buffer()
