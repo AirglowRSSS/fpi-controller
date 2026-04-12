@@ -63,5 +63,5 @@ class FilterWheel():
             return
         if self.ip_address != None:
             logging.debug('Moving FilterWheel to position ' + str(position))
-            text = requests.get(url=self.ip_address + f'go/{position}', timeout=100).text
+            text = requests.get(url=self.ip_address + f'go/{position}', timeout=100).text.strip()
             logging.info('Moving FilterWheel response: ' + text)
