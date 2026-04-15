@@ -16,6 +16,9 @@ handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1 * 1024 * 102
 handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 
+# Suppress logging from SSHTunnelForwarder and Paramiko to avoid cluttering the logs
+logging.getLogger("sshtunnel").setLevel(logging.WARNING)
+logging.getLogger("paramiko").setLevel(logging.WARNING)
 
 def update_database(process_cmd, status, site_id):
     logging.debug("Updating database: process='%s', site='%s', status=%d", process_cmd, site_id, status)
