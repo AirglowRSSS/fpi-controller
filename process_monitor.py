@@ -31,7 +31,7 @@ def update_database(process_cmd, status, site_id):
         try:
             con = mdb.connect(host='127.0.0.1', db='airglowgroup_sitestatus', port=server.local_bind_port, read_default_file="/home/airglow/.my2.cnf")
             cursor = con.cursor()
-            current_time = datetime.utcnow()
+            current_time = datetime.now(datetime.UTC)
             sql = """
             INSERT INTO process_status (process_name, site_id, status, last_checked)
             VALUES (%s, %s, %s, %s)
