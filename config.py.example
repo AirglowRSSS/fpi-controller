@@ -94,3 +94,20 @@ filterwheel_config = {
     'laser_position': 2,
     'park_position': 0
 }
+
+# Processes monitored by process_monitor.py (run via crontab).
+# Each entry: process_name -> {start_time, stop_time, command}
+# start_time/stop_time use "HH:MM" strings; use None for processes that run 24/7.
+# A window that crosses midnight (e.g. "16:00"–"06:00") is handled automatically.
+processes_to_monitor = {
+    "main_scheduler.py": {
+        "start_time": "16:00",
+        "stop_time": "06:00",
+        "command": "/home/airglow/airglowrsss/bin/python /home/airglow/airglow/fpi-controller/main_scheduler.py"
+    },
+    "skyalert-logger.py": {
+        "start_time": None,
+        "stop_time": None,
+        "command": "/home/airglow/airglowrsss/bin/python /home/airglow/airglow/skyalert-logger/skyalert-logger.py"
+    }
+}
