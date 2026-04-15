@@ -2,9 +2,12 @@
 import logging
 import logging.handlers
 import os
+import socket
 import subprocess
+import threading
+from contextlib import contextmanager
 from datetime import datetime
-from sshtunnel import SSHTunnelForwarder
+import paramiko
 import MySQLdb as mdb
 from config import config, processes_to_monitor
 import utilities.time_helper
@@ -16,20 +19,86 @@ handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1 * 1024 * 102
 handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 
-# Suppress logging from SSHTunnelForwarder and Paramiko to avoid cluttering the logs
-logging.getLogger("sshtunnel").setLevel(logging.WARNING)
+# Suppress noisy paramiko output
 logging.getLogger("paramiko").setLevel(logging.WARNING)
+
+
+@contextmanager
+def ssh_tunnel(ssh_host, ssh_port, ssh_user, ssh_key_path,
+               remote_host, remote_port, local_port=0):
+    """Native paramiko replacement for SSHTunnelForwarder."""
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(
+        hostname=ssh_host,
+        port=ssh_port,
+        username=ssh_user,
+        key_filename=os.path.expanduser(ssh_key_path),
+    )
+
+    transport = client.get_transport()
+
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_sock.bind(('127.0.0.1', local_port))
+    server_sock.listen(1)
+    actual_local_port = server_sock.getsockname()[1]
+
+    stop_event = threading.Event()
+
+    def forward():
+        server_sock.settimeout(1.0)
+        while not stop_event.is_set():
+            try:
+                client_sock, _ = server_sock.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                break
+            try:
+                channel = transport.open_channel(
+                    'direct-tcpip',
+                    (remote_host, remote_port),
+                    client_sock.getpeername(),
+                )
+            except Exception:
+                client_sock.close()
+                continue
+
+            def pipe(src, dst):
+                try:
+                    while True:
+                        data = src.recv(1024)
+                        if not data:
+                            break
+                        dst.sendall(data)
+                except Exception:
+                    pass
+                finally:
+                    src.close()
+                    dst.close()
+
+            threading.Thread(target=pipe, args=(client_sock, channel), daemon=True).start()
+            threading.Thread(target=pipe, args=(channel, client_sock), daemon=True).start()
+
+    t = threading.Thread(target=forward, daemon=True)
+    t.start()
+
+    try:
+        yield actual_local_port
+    finally:
+        stop_event.set()
+        server_sock.close()
+        client.close()
+        t.join(timeout=5)
+
 
 def update_database(process_cmd, status, site_id):
     logging.debug("Updating database: process='%s', site='%s', status=%d", process_cmd, site_id, status)
-    with SSHTunnelForwarder(
-        ('airglowgroup.web.illinois.edu', 22),
-        ssh_username='airglowgroup',
-        ssh_private_key='/home/airglow/.ssh/id_rsa',
-        remote_bind_address=('127.0.0.1', 3306)
-    ) as server:
+    with ssh_tunnel('airglowgroup.web.illinois.edu', 22, 'airglowgroup',
+                    '/home/airglow/.ssh/id_rsa', '127.0.0.1', 3306) as local_port:
         try:
-            con = mdb.connect(host='127.0.0.1', db='airglowgroup_sitestatus', port=server.local_bind_port, read_default_file="/home/airglow/.my2.cnf")
+            con = mdb.connect(host='127.0.0.1', db='airglowgroup_sitestatus', port=local_port, read_default_file="/home/airglow/.my2.cnf")
             cursor = con.cursor()
             current_time = datetime.now(datetime.UTC)
             sql = """
