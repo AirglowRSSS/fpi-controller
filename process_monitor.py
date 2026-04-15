@@ -6,7 +6,7 @@ import socket
 import subprocess
 import threading
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 import paramiko
 import MySQLdb as mdb
 from config import config, processes_to_monitor
@@ -100,7 +100,7 @@ def update_database(process_cmd, status, site_id):
         try:
             con = mdb.connect(host='127.0.0.1', db='airglowgroup_sitestatus', port=local_port, read_default_file="/home/airglow/.my2.cnf")
             cursor = con.cursor()
-            current_time = datetime.now(datetime.UTC)
+            current_time = datetime.now(timezone.utc)
             sql = """
             INSERT INTO process_status (process_name, site_id, status, last_checked)
             VALUES (%s, %s, %s, %s)
