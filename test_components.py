@@ -61,17 +61,11 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # 	gmail
 
 #what_to_test = ['LaserShutter']
-<<<<<<< Updated upstream
 #what_to_test = ['SkyAlert']
-#what_to_test = ['Sequence']
-what_to_test = ['SkyScanner']
-=======
-what_to_test = ['SkyAlert']
 #what_to_test = ['SkyAlert', 'FilterWheel','LaserShutter']
 #what_to_test = ['Sequence']
-#what_to_test = ['SkyScanner']
+what_to_test = ['SkyScanner']
 #what_to_test = ['CCD']
->>>>>>> Stashed changes
 #what_to_test = ['FilterWheel']
 
 powerControl = PowerControl(config['powerSwitchAddress'], config['powerSwitchUser'], config['powerSwitchPassword'])
