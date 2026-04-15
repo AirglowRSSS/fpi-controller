@@ -191,8 +191,9 @@ try:
     if not isExist:
         os.makedirs(data_folder_name)
 
+    skyalert = SkyAlert(config['skyAlertAddress']) if config['skyAlertMAC'] is not None else None
     imageTaker = Image_Helper(data_folder_name, camera,
-                            config['site'], config['latitude'], config['longitude'], config['instr_name'], config['hbin'], config['vbin'], SkyAlert(config['skyAlertAddress']))
+                            config['site'], config['latitude'], config['longitude'], config['instr_name'], config['hbin'], config['vbin'], skyalert)
 
     # Take initial images
     if datetime.now() < (sunset + timedelta(minutes=10)):
