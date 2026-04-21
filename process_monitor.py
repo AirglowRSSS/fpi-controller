@@ -17,7 +17,7 @@ site_id = config['site'].lower()
 log_file = os.path.join(config['log_dir'], 'process_monitor.log')
 handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1 * 1024 * 1024, backupCount=3)
 handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
-logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+logging.basicConfig(level=config['log_type'], handlers=[handler])
 
 # Suppress noisy paramiko output
 logging.getLogger("paramiko").setLevel(logging.WARNING)
